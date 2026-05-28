@@ -8,7 +8,7 @@ import { Car, Review } from '../types';
 import ReviewList from './ReviewList';
 import { 
   X, Calendar, Fuel, Milestone, Settings, Palette, Zap, Cpu, 
-  Check, Phone, Mail, FileText, BadgePercent, ShieldCheck 
+  Check, Phone, Mail, FileText, BadgePercent, ShieldCheck, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -26,6 +26,18 @@ export default function CarDetailModal({ car, reviews, onClose, onAddReview }: C
   const [phone, setPhone] = useState('');
   const [tradeDetails, setTradeDetails] = useState('');
   const [isSent, setIsSent] = useState(false);
+  
+  // Interactive slider gallery state
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
+  const allImages = car.images && car.images.length > 0 ? car.images : [car.imageUrl];
+
+  const handleNextImage = () => {
+    setActiveImgIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const handlePrevImage = () => {
+    setActiveImgIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   const formatPrice = (price: number) => {
     return price.toLocaleString('tr-TR') + ' ₺';
@@ -93,15 +105,47 @@ export default function CarDetailModal({ car, reviews, onClose, onAddReview }: C
         {/* Modal Scroll Container */}
         <div className="overflow-y-auto flex-1 bg-slate-950">
           {/* Main Car Showcase Banner */}
-          <div className="relative aspect-21/9 w-full bg-slate-950">
-            <img
-              src={car.imageUrl}
-              alt={`${car.brand} ${car.model}`}
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85" />
-            <div className="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4 text-white">
+          <div className="relative aspect-16/10 sm:aspect-21/9 w-full bg-slate-950 group">
+            <div className="w-full h-full relative overflow-hidden">
+              <img
+                src={allImages[activeImgIndex] || car.imageUrl}
+                alt={`${car.brand} ${car.model}`}
+                referrerPolicy="no-referrer"
+                className="h-full w-full object-cover transition-all duration-300"
+              />
+            </div>
+
+            {/* Slider arrows (Only if multiple images exist) */}
+            {allImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-950/85 border border-slate-800 text-white rounded-full p-2 hover:bg-rose-600 hover:border-rose-500 transition-all z-20 cursor-pointer shadow-lg"
+                  aria-label="Önceki Resim"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-950/85 border border-slate-800 text-white rounded-full p-2 hover:bg-rose-600 hover:border-rose-500 transition-all z-20 cursor-pointer shadow-lg"
+                  aria-label="Sonraki Resim"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            )}
+
+            {/* Image Counter Indicator */}
+            {allImages.length > 1 && (
+              <div className="absolute top-4 right-4 bg-slate-950/90 border border-slate-800 text-[10px] font-mono font-bold text-slate-350 px-3 py-1.5 rounded-full z-20 shadow-md">
+                {activeImgIndex + 1} / {allImages.length}
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85 pointer-events-none z-10" />
+            <div className="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4 text-white z-10">
               <div>
                 <p className="text-xs font-mono uppercase tracking-widest text-rose-500">Anahtar Teslim</p>
                 <h1 className="text-2xl md:text-3xl font-black font-sans tracking-tight">
@@ -116,6 +160,24 @@ export default function CarDetailModal({ car, reviews, onClose, onAddReview }: C
               </div>
             </div>
           </div>
+
+          {/* Thumbnail Gallery Strip (Only if multiple images exist) */}
+          {allImages.length > 1 && (
+            <div className="bg-slate-950 border-b border-slate-900 px-6 py-3 flex gap-2.5 overflow-x-auto scrollbar-none scroll-smooth">
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveImgIndex(idx)}
+                  className={`relative aspect-video w-20 rounded-lg overflow-hidden border transition active:scale-95 cursor-pointer shrink-0 ${
+                    idx === activeImgIndex ? 'border-rose-500 ring-2 ring-rose-500/15' : 'border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <img src={img} alt="Thumbnail representation" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Navigation Tabs */}
           <div className="flex border-b border-slate-800 bg-slate-950 px-6">

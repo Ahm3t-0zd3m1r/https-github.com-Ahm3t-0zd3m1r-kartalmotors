@@ -16,6 +16,7 @@ export interface Car {
   color: string;
   enginePower: number; // in HP
   imageUrl: string;
+  images?: string[]; // Multiple photos of the vehicle
   description: string;
   features: string[];
   status: 'active' | 'sold';

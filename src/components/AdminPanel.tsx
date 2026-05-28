@@ -7,7 +7,8 @@ import React, { useState } from 'react';
 import { Car, Review } from '../types';
 import { 
   PlusCircle, Trash2, LayoutGrid, Check, Settings, ShieldCheck, 
-  MessageSquare, Star, Reply, LogOut, CheckCircle, CarFront, FileText, Edit
+  MessageSquare, Star, Reply, LogOut, CheckCircle, CarFront, FileText, Edit,
+  Upload, X
 } from 'lucide-react';
 import { 
   CAR_BRAND_PRESETS, CAR_BODY_TYPES, FUEL_TYPES, 
@@ -66,6 +67,10 @@ export default function AdminPanel({
   // Dynamic premium preset URLs for admin comfort
   const [imageUrlPreset, setImageUrlPreset] = useState('custom');
   const [customImageUrl, setCustomImageUrl] = useState('');
+  
+  // Custom uploaded images list & drag and drop state
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
 
   const PRESET_IMAGE_URLS = {
     porsche: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=1200',
@@ -107,6 +112,62 @@ export default function AdminPanel({
     }
   };
 
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleChangeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  const handleFiles = (files: FileList) => {
+    const filePromises = Array.from(files).map((file) => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result);
+          } else {
+            reject();
+          }
+        };
+        reader.onerror = () => reject();
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(filePromises).then((base64Strings) => {
+      setUploadedImages((prev) => {
+        const updated = [...prev, ...base64Strings];
+        // Auto set customImageUrl if none is set yet
+        if (!customImageUrl && imageUrlPreset === 'custom') {
+          setCustomImageUrl(base64Strings[0]);
+        }
+        return updated;
+      });
+    }).catch(() => {
+      alert('Resimler yüklenirken bir hata oluştu.');
+    });
+  };
+
   const handleStartEdit = (car: Car) => {
     setEditingCar(car);
     
@@ -130,6 +191,7 @@ export default function AdminPanel({
     setEnginePower(car.enginePower);
     setDescription(car.description);
     setSelectedFeatures(car.features);
+    setUploadedImages(car.images || (car.imageUrl ? [car.imageUrl] : []));
     
     // Find preset image or use custom URL
     const matchedPreset = Object.entries(PRESET_IMAGE_URLS).find(([key, url]) => url === car.imageUrl);
@@ -153,11 +215,26 @@ export default function AdminPanel({
     }
 
     const finalBrand = brand === 'Custom' ? customBrand : brand;
-    const finalImageUrl = imageUrlPreset === 'custom' ? customImageUrl : PRESET_IMAGE_URLS[imageUrlPreset];
+    let finalImageUrl = imageUrlPreset === 'custom' ? customImageUrl : PRESET_IMAGE_URLS[imageUrlPreset];
+
+    // Fallback: if they uploaded custom images but didn't set cover image, use the first uploaded image
+    if (!finalImageUrl && uploadedImages.length > 0) {
+      finalImageUrl = uploadedImages[0];
+    }
 
     if (!finalImageUrl) {
-      alert('Lütfen geçerli bir araç görsel adresi giriniz veya şablondan seçiniz.');
+      alert('Lütfen en az bir adet araç görseli yükleyin veya şablonlardan seçin.');
       return;
+    }
+
+    // Prepare images array
+    const finalImagesList = uploadedImages.length > 0 
+      ? uploadedImages 
+      : [finalImageUrl];
+
+    // Ensure finalImageUrl is at the beginning of finalImagesList or highlighted
+    if (!finalImagesList.includes(finalImageUrl)) {
+      finalImagesList.unshift(finalImageUrl);
     }
 
     if (editingCar) {
@@ -174,6 +251,7 @@ export default function AdminPanel({
         color,
         enginePower: Number(enginePower),
         imageUrl: finalImageUrl,
+        images: finalImagesList,
         description,
         features: selectedFeatures
       };
@@ -196,6 +274,7 @@ export default function AdminPanel({
         color,
         enginePower: Number(enginePower),
         imageUrl: finalImageUrl,
+        images: finalImagesList,
         description,
         features: selectedFeatures,
         status: 'active',
@@ -214,6 +293,7 @@ export default function AdminPanel({
     setSelectedFeatures([]);
     setCustomImageUrl('');
     setImageUrlPreset('custom');
+    setUploadedImages([]);
     
     setActiveTab('listings');
     setTimeout(() => setFormSuccessMessage(''), 4000);
@@ -665,6 +745,172 @@ export default function AdminPanel({
                       className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-200 placeholder-slate-600 focus:border-rose-500 focus:outline-hidden disabled:bg-slate-950 disabled:text-slate-600 transition"
                     />
                   </div>
+                </div>
+
+                {/* Çoklu Fotoğraf Yükleme ve Yönetimi */}
+                <div className="space-y-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-850/80">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        Araç Fotoğrafları (Çoklu Fotoğraf Yükleme)
+                      </label>
+                      <p className="text-[10px] text-slate-500 mt-1">İlana ait birden fazla yüksek kaliteli fotoğraf yükleyin. Sürükleyip bırakabilir veya dosya seçebilirsiniz.</p>
+                    </div>
+                    {uploadedImages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadedImages([]);
+                          setCustomImageUrl('');
+                        }}
+                        className="text-[10px] text-rose-500 hover:text-rose-400 font-bold transition-colors cursor-pointer"
+                      >
+                        Tümünü Temizle
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Drag and Drop Tarzı Uploader Kutusu */}
+                  <div
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                    className={`relative rounded-2xl border-2 border-dashed p-6 transition-all duration-200 flex flex-col items-center justify-center text-center leading-none min-h-[120px] cursor-pointer ${
+                      dragActive
+                        ? 'border-rose-500 bg-rose-500/10'
+                        : 'border-slate-800 bg-slate-950/80 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      id="multiple-image-uploader"
+                      multiple
+                      accept="image/*"
+                      onChange={handleChangeUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="multiple-image-uploader" className="absolute inset-0 w-full h-full cursor-pointer z-10" />
+                    
+                    <Upload size={24} className="text-slate-500 mb-2.5 animate-pulse relative z-0" />
+                    <p className="text-xs text-slate-300 font-bold relative z-0">
+                      Resimleri buraya sürükleyin veya{' '}
+                      <span className="text-rose-500 hover:text-rose-450 underline">
+                        dosya seçin
+                      </span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1.5 relative z-0">Önerilen: 16:9 yatay, WebP veya JPEG formatı</p>
+                  </div>
+
+                  {/* URL ile Fotoğraf Ekleme Alternatifi */}
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      id="custom-url-add-field"
+                      placeholder="İnternetten ek fotoğraf linki yapıştırıp listeye ekleyin..."
+                      className="flex-1 rounded-xl border border-slate-805 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-rose-500"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim();
+                          if (val) {
+                            setUploadedImages((prev) => {
+                              const updated = [...prev, val];
+                              if (!customImageUrl) setCustomImageUrl(val);
+                              return updated;
+                            });
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('custom-url-add-field') as HTMLInputElement;
+                        if (input && input.value.trim()) {
+                          const val = input.value.trim();
+                          setUploadedImages((prev) => {
+                            const updated = [...prev, val];
+                            if (!customImageUrl) setCustomImageUrl(val);
+                            return updated;
+                          });
+                          input.value = '';
+                        }
+                      }}
+                      className="cursor-pointer bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs px-4 py-2 rounded-xl transition shrink-0"
+                    >
+                      Ekle
+                    </button>
+                  </div>
+
+                  {/* Fotoğraf Grid Önizlemesi */}
+                  {uploadedImages.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-mono text-slate-500 block">Yüklü Fotoğraflar ({uploadedImages.length}):</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {uploadedImages.map((imgUrl, idx) => {
+                          const isPrimary = customImageUrl === imgUrl || (idx === 0 && !customImageUrl);
+                          return (
+                            <div
+                              key={idx}
+                              className={`group relative aspect-video rounded-xl overflow-hidden bg-slate-950 border transition ${
+                                isPrimary ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-800 hover:border-slate-705'
+                              }`}
+                            >
+                              <img
+                                src={imgUrl}
+                                alt={`Vehicle snapshot ${idx}`}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                              {/* Hover overlay actions */}
+                              <div className="absolute inset-0 bg-black/85 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col justify-between p-2 z-10">
+                                {/* Delete button */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUploadedImages((prev) => prev.filter((_, itemIdx) => itemIdx !== idx));
+                                    if (customImageUrl === imgUrl) {
+                                      setCustomImageUrl('');
+                                    }
+                                  }}
+                                  className="self-end bg-rose-650 hover:bg-rose-600 p-1.5 rounded-lg text-white transition cursor-pointer"
+                                  title="Görseli Kaldır"
+                                >
+                                  <X size={12} />
+                                </button>
+
+                                {/* Primary choice */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCustomImageUrl(imgUrl);
+                                    setImageUrlPreset('custom');
+                                  }}
+                                  className={`text-[9px] font-bold py-1 px-1.5 rounded-md text-center transition cursor-pointer ${
+                                    isPrimary
+                                      ? 'bg-rose-600 text-white'
+                                      : 'bg-slate-900 text-slate-300 hover:bg-rose-950 hover:text-rose-450 border border-slate-800'
+                                  }`}
+                                >
+                                  {isPrimary ? 'Ana Kapak' : 'Kapak Yap'}
+                                </button>
+                              </div>
+                              {/* Primary Badge */}
+                              {isPrimary && (
+                                <div className="absolute top-1 left-1 bg-rose-600 text-white text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-wider">
+                                  Kapak
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Description Area */}

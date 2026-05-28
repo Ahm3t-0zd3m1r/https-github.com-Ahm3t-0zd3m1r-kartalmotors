@@ -232,7 +232,7 @@ export default function App() {
       {activeNav === 'vitrin' && (
         <div className="relative bg-slate-950 overflow-hidden py-14 px-6">
           {/* Cover image under dark scrim */}
-          <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=1600')] bg-cover bg-center brightness-[0.22] saturate-75" />
+          <div className="absolute inset-0 z-0 bg-[url('https://instagram.fada9-2.fna.fbcdn.net/v/t51.82787-15/543759716_18073303502116197_7242795450113711265_n.jpg?stp=cp6_dst-jpg_e35_s640x640_sh2.08_tt6&_nc_cat=103&ig_cache_key=MzcxOTk6Njc4MDEyNDA4MzY2Mg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=xFwSG0l87jYQ7kNvwGtl51A&_nc_oc=Adp4s2XhmgrQVucMdMecILRT1ApaF4k6X5Dx7pFKCk2D2PRa67m-f4fhjl58ibSjSCM&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.fada9-2.fna&_nc_gid=nXLwMk7DWm_wB07VBk-iwQ&_nc_ss=7a22e&oh=00_Af7vx76Y4aaxsk3a0dLINkLzH-SwmA1VhCJwfqQHVSwvdg&oe=6A1E6BB8')] bg-cover bg-center brightness-[0.22] saturate-75" />
           
           <div className="relative z-10 max-w-7xl mx-auto text-center md:text-left text-white grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             {/* Catchy headline */}
