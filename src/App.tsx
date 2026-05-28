@@ -72,6 +72,14 @@ export default function App() {
     saveCarsToLocal(updated);
   };
 
+  const handleUpdateCar = (updatedCar: Car) => {
+    const updated = cars.map((c) => (c.id === updatedCar.id ? updatedCar : c));
+    saveCarsToLocal(updated);
+    if (selectedCar && selectedCar.id === updatedCar.id) {
+      setSelectedCar(updatedCar);
+    }
+  };
+
   const handleUpdateCarStatus = (carId: string, status: 'active' | 'sold') => {
     const updated = cars.map((c) => (c.id === carId ? { ...c, status } : c));
     saveCarsToLocal(updated);
@@ -539,6 +547,7 @@ export default function App() {
                 cars={cars}
                 reviews={reviews}
                 onAddCar={handleAddCar}
+                onUpdateCar={handleUpdateCar}
                 onUpdateCarStatus={handleUpdateCarStatus}
                 onDeleteCar={handleDeleteCar}
                 onAddAdminReply={handleAddAdminReply}

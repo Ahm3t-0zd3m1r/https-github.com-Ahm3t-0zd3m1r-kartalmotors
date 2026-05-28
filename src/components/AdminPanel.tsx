@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Car, Review } from '../types';
 import { 
   PlusCircle, Trash2, LayoutGrid, Check, Settings, ShieldCheck, 
-  MessageSquare, Star, Reply, LogOut, CheckCircle, CarFront, FileText 
+  MessageSquare, Star, Reply, LogOut, CheckCircle, CarFront, FileText, Edit
 } from 'lucide-react';
 import { 
   CAR_BRAND_PRESETS, CAR_BODY_TYPES, FUEL_TYPES, 
@@ -19,6 +19,7 @@ interface AdminPanelProps {
   cars: Car[];
   reviews: Review[];
   onAddCar: (newCar: Car) => void;
+  onUpdateCar?: (updatedCar: Car) => void;
   onUpdateCarStatus: (carId: string, status: 'active' | 'sold') => void;
   onDeleteCar: (carId: string) => void;
   onAddAdminReply: (reviewId: string, reply: string) => void;
@@ -29,6 +30,7 @@ export default function AdminPanel({
   cars,
   reviews,
   onAddCar,
+  onUpdateCar,
   onUpdateCarStatus,
   onDeleteCar,
   onAddAdminReply,
@@ -42,7 +44,10 @@ export default function AdminPanel({
   // Navigation states
   const [activeTab, setActiveTab] = useState<'listings' | 'add' | 'reviews'>('listings');
 
-  // Form states (Add Car)
+  // Editing state for vehicle update
+  const [editingCar, setEditingCar] = useState<Car | null>(null);
+
+  // Form states (Add / Edit Car)
   const [brand, setBrand] = useState('Porsche');
   const [customBrand, setCustomBrand] = useState('');
   const [model, setModel] = useState('');
@@ -102,6 +107,43 @@ export default function AdminPanel({
     }
   };
 
+  const handleStartEdit = (car: Car) => {
+    setEditingCar(car);
+    
+    // Set all form states
+    if (CAR_BRAND_PRESETS.includes(car.brand)) {
+      setBrand(car.brand);
+      setCustomBrand('');
+    } else {
+      setBrand('Custom');
+      setCustomBrand(car.brand);
+    }
+    
+    setModel(car.model);
+    setYear(car.year);
+    setPrice(car.price);
+    setMileage(car.mileage);
+    setTransmission(car.transmission);
+    setFuel(car.fuel);
+    setBodyType(car.bodyType);
+    setColor(car.color);
+    setEnginePower(car.enginePower);
+    setDescription(car.description);
+    setSelectedFeatures(car.features);
+    
+    // Find preset image or use custom URL
+    const matchedPreset = Object.entries(PRESET_IMAGE_URLS).find(([key, url]) => url === car.imageUrl);
+    if (matchedPreset) {
+      setImageUrlPreset(matchedPreset[0]);
+      setCustomImageUrl('');
+    } else {
+      setImageUrlPreset('custom');
+      setCustomImageUrl(car.imageUrl);
+    }
+    
+    setActiveTab('add');
+  };
+
   const handleAddCarSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -118,26 +160,51 @@ export default function AdminPanel({
       return;
     }
 
-    const newCar: Car = {
-      id: `car-${Date.now()}`,
-      brand: finalBrand,
-      model,
-      year: Number(year),
-      price: Number(price),
-      mileage: Number(mileage),
-      transmission,
-      fuel,
-      bodyType,
-      color,
-      enginePower: Number(enginePower),
-      imageUrl: finalImageUrl,
-      description,
-      features: selectedFeatures,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
+    if (editingCar) {
+      const updatedCar: Car = {
+        ...editingCar,
+        brand: finalBrand,
+        model,
+        year: Number(year),
+        price: Number(price),
+        mileage: Number(mileage),
+        transmission,
+        fuel,
+        bodyType,
+        color,
+        enginePower: Number(enginePower),
+        imageUrl: finalImageUrl,
+        description,
+        features: selectedFeatures
+      };
+      if (onUpdateCar) {
+        onUpdateCar(updatedCar);
+      }
+      setEditingCar(null);
+      setFormSuccessMessage('Araç bilgileri başarıyla güncellendi!');
+    } else {
+      const newCar: Car = {
+        id: `car-${Date.now()}`,
+        brand: finalBrand,
+        model,
+        year: Number(year),
+        price: Number(price),
+        mileage: Number(mileage),
+        transmission,
+        fuel,
+        bodyType,
+        color,
+        enginePower: Number(enginePower),
+        imageUrl: finalImageUrl,
+        description,
+        features: selectedFeatures,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
 
-    onAddCar(newCar);
+      onAddCar(newCar);
+      setFormSuccessMessage('Araç başarılı bir şekilde portföye yüklendi!');
+    }
 
     // Reset Form
     setModel('');
@@ -148,7 +215,6 @@ export default function AdminPanel({
     setCustomImageUrl('');
     setImageUrlPreset('custom');
     
-    setFormSuccessMessage('Araç başarılı bir şekilde portföye yüklendi!');
     setActiveTab('listings');
     setTimeout(() => setFormSuccessMessage(''), 4000);
   };
@@ -256,12 +322,22 @@ export default function AdminPanel({
             Araçları Yönet ({cars.length})
           </button>
           <button
-            onClick={() => setActiveTab('add')}
+            onClick={() => {
+              setEditingCar(null);
+              setModel('');
+              setColor('');
+              setMileage(0);
+              setDescription('');
+              setSelectedFeatures([]);
+              setCustomImageUrl('');
+              setImageUrlPreset('custom');
+              setActiveTab('add');
+            }}
             className={`cursor-pointer px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
               activeTab === 'add' ? 'bg-rose-600 text-white shadow-[0_2px_8px_rgba(225,29,72,0.2)]' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
             }`}
           >
-            Yeni Araç Ekle
+            {editingCar ? 'İlanı Düzenle' : 'Yeni Araç Ekle'}
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -365,7 +441,15 @@ export default function AdminPanel({
                               {car.status === 'active' ? 'Aktif Satış' : 'SATILDI'}
                             </button>
                           </td>
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3.5 px-4 text-right flex items-center justify-end gap-1.5">
+                            <button
+                              id={`btn-edit-car-${car.id}`}
+                              onClick={() => handleStartEdit(car)}
+                              className="cursor-pointer rounded-lg p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-all duration-150"
+                              title="İlanı Düzenle / Görsel Güncelle"
+                            >
+                              <Edit size={16} />
+                            </button>
                             <button
                               id={`btn-delete-car-${car.id}`}
                               onClick={() => {
@@ -399,8 +483,10 @@ export default function AdminPanel({
             >
               <form onSubmit={handleAddCarSubmit} className="space-y-6">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-                  <PlusCircle size={18} className="text-rose-500" />
-                  <span className="font-sans text-sm font-bold uppercase tracking-wider text-slate-200">Sisteme Yeni Araç Yükle</span>
+                  {editingCar ? <Edit size={18} className="text-rose-500" /> : <PlusCircle size={18} className="text-rose-500" />}
+                  <span className="font-sans text-sm font-bold uppercase tracking-wider text-slate-200">
+                    {editingCar ? `İlanı Düzenle (${editingCar.brand} ${editingCar.model})` : 'Sisteme Yeni Araç Yükle'}
+                  </span>
                 </div>
 
                 {/* Form row 1 */}
@@ -633,7 +719,17 @@ export default function AdminPanel({
                 <div className="pt-4 border-t border-slate-850 flex items-center justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('listings')}
+                    onClick={() => {
+                      setEditingCar(null);
+                      setModel('');
+                      setColor('');
+                      setMileage(0);
+                      setDescription('');
+                      setSelectedFeatures([]);
+                      setCustomImageUrl('');
+                      setImageUrlPreset('custom');
+                      setActiveTab('listings');
+                    }}
                     className="cursor-pointer rounded-xl border border-slate-800 hover:bg-slate-900 text-slate-300 font-bold text-xs px-4 py-2.5 transition"
                   >
                     Vazgeç
@@ -643,7 +739,7 @@ export default function AdminPanel({
                     type="submit"
                     className="cursor-pointer rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-6 py-2.5 transition active:scale-95 shadow-[0_4px_12px_rgba(225,29,72,0.2)]"
                   >
-                    İlanı Yayınla
+                    {editingCar ? 'Değişiklikleri Kaydet' : 'İlanı Yayınla'}
                   </button>
                 </div>
               </form>
