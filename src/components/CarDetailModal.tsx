@@ -8,7 +8,7 @@ import { Car, Review } from '../types';
 import ReviewList from './ReviewList';
 import { 
   X, Calendar, Fuel, Milestone, Settings, Palette, Zap, Cpu, 
-  Check, Phone, Mail, FileText, BadgePercent, ShieldCheck, ChevronLeft, ChevronRight
+  Check, Phone, Mail, FileText, BadgePercent, ShieldCheck, ChevronLeft, ChevronRight, Instagram
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -396,6 +396,10 @@ export default function CarDetailModal({ car, reviews, onClose, onAddReview }: C
                       <a href="https://wa.me/905380705210" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-emerald-400 hover:text-emerald-350 transition-colors font-bold">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>Satış & WP: 0538 070 52 10</span>
+                      </a>
+                      <a href="https://www.instagram.com/sergenozalppp/?hl=tr" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-pink-400 hover:text-pink-350 transition-colors font-semibold">
+                        <Instagram size={12} className="text-pink-500" />
+                        <span>Instagram: @sergenozalppp</span>
                       </a>
                       <div className="flex items-center gap-2">
                         <Mail size={12} className="text-rose-500" />

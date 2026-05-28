@@ -12,7 +12,7 @@ import AdminPanel from './components/AdminPanel';
 import ReviewList from './components/ReviewList';
 import { 
   ShieldCheck, Phone, Mail, Award, Landmark, Sparkles, 
-  Search, SlidersHorizontal, MapPin, Clock, Check, ChevronRight, MessageSquare 
+  Search, SlidersHorizontal, MapPin, Clock, Check, ChevronRight, MessageSquare, Instagram 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -156,6 +156,9 @@ export default function App() {
             <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><Phone size={12} className="text-rose-500" /> +90 (212) 555 1907</span>
             <span className="text-white/25">|</span>
             <a href="https://wa.me/905380705210" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-350 transition-colors font-bold"><Phone size={12} className="text-emerald-500 fill-emerald-500/20" /> Gsm / WhatsApp: 0538 070 5210</a>
+            <span className="text-white/25">|</span>
+            <a href="https://www.instagram.com/sergenozalppp/?hl=tr" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-pink-400 hover:text-pink-350 transition-colors font-bold"><Instagram size={12} className="text-pink-500" /> Instagram: @sergenozalppp</a>
+            <span className="text-white/25">|</span>
             <span className="text-rose-500 font-bold font-sans">100% Ekspertiz Garantisi</span>
           </div>
         </div>
@@ -517,6 +520,16 @@ export default function App() {
                       <h4 className="font-bold text-white font-sans text-sm">E-posta Yazışma</h4>
                       <p className="text-xs mt-1 font-mono text-slate-300">yonetim@kartalmotors.com</p>
                       <p className="text-xs font-mono text-slate-500">destek@kartalmotors.com</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Instagram size={18} className="text-rose-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-white font-sans text-sm">Resmi Instagram</h4>
+                      <a href="https://www.instagram.com/sergenozalppp/?hl=tr" target="_blank" rel="noreferrer" className="text-xs mt-1 font-mono hover:text-pink-400 text-pink-500 transition-colors block font-semibold">
+                        @sergenozalppp
+                      </a>
                     </div>
                   </div>
                 </div>
